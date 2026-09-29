@@ -1,0 +1,54 @@
+{
+  "version": 3,
+  "permissions": [
+    {
+      "resource": "claims",
+      "component": "expense-api",
+      "description": "Expense claims and their approval lifecycle",
+      "actions": [
+        { "handle": "read", "description": "The caller's own claims" },
+        { "handle": "submit", "description": "Create and send a claim" },
+        { "handle": "read-team", "description": "Claims submitted by employees who report to the caller" },
+        { "handle": "approve", "description": "Approve a pending claim reporting to the caller" },
+        { "handle": "reject", "description": "Reject a pending claim reporting to the caller" },
+        { "handle": "read-all", "description": "Every approved claim, across the organization" },
+        { "handle": "export", "description": "Export approved, unexported claims to a file" }
+      ]
+    }
+  ],
+  "groups": [
+    { "name": "Employees", "description": "Everyone who may submit expense claims" },
+    { "name": "Managers", "description": "People who review and decide claims submitted by their reports" },
+    { "name": "Finance", "description": "Finance staff who export approved claims to payroll" }
+  ],
+  "roles": [
+    {
+      "name": "Employee",
+      "description": "Submits expense claims and tracks their own status.",
+      "stories": [1, 2, 5],
+      "grants": ["claims:read", "claims:submit"],
+      "assignTo": ["Employees"]
+    },
+    {
+      "name": "Manager",
+      "description": "Reviews and decides claims submitted by direct reports.",
+      "stories": [3, 4, 6],
+      "grants": ["claims:read-team", "claims:approve", "claims:reject"],
+      "assignTo": ["Managers"]
+    },
+    {
+      "name": "FinanceReviewer",
+      "description": "Reviews approved claims and exports them for payroll.",
+      "stories": [7, 8, 9],
+      "grants": ["claims:read-all", "claims:export"],
+      "assignTo": ["Finance"]
+    }
+  ],
+  "testUsers": [
+    { "username": "test-employee", "roles": ["Employee"] },
+    { "username": "test-employee2", "roles": ["Employee"] },
+    { "username": "test-manager", "roles": ["Manager"] },
+    { "username": "test-manager2", "roles": ["Manager"] },
+    { "username": "test-financereviewer", "roles": ["FinanceReviewer"] }
+  ]
+}

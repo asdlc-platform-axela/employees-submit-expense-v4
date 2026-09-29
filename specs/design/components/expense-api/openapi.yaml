@@ -1,0 +1,319 @@
+openapi: 3.0.3
+info:
+  title: Expense API
+  version: 0.1.0
+  description: Expense claims — submission, approval, and export to payroll.
+servers:
+  - url: /
+
+paths:
+  /me/claims:
+    get:
+      operationId: listMyClaims
+      summary: The caller's own claims
+      security:
+        - oauth2: [claims:read]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, approved, rejected] }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: The caller's claims
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count, data]
+                properties:
+                  count: { type: integer, description: total matching items }
+                  next: { type: string, nullable: true, description: relative URI of the next page }
+                  previous: { type: string, nullable: true, description: relative URI of the previous page }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ExpenseClaim' }
+        '401':
+          description: Not signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    post:
+      operationId: submitClaim
+      summary: Submit a new expense claim
+      security:
+        - oauth2: [claims:submit]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NewExpenseClaim' }
+      responses:
+        '201':
+          description: Claim created, pending approval
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExpenseClaim' }
+        '400':
+          description: Missing or invalid claim fields
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Not signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /me/claims/{claimId}:
+    get:
+      operationId: getMyClaim
+      summary: One of the caller's own claims
+      security:
+        - oauth2: [claims:read]
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The claim
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExpenseClaim' }
+        '404':
+          description: No such claim of the caller's
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Not signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /me/team/claims:
+    get:
+      operationId: listTeamClaims
+      summary: Claims submitted by the caller's direct reports
+      security:
+        - oauth2: [claims:read-team]
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, approved, rejected] }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: Claims of the caller's direct reports
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count, data]
+                properties:
+                  count: { type: integer, description: total matching items }
+                  next: { type: string, nullable: true, description: relative URI of the next page }
+                  previous: { type: string, nullable: true, description: relative URI of the previous page }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ExpenseClaim' }
+        '401':
+          description: Not signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /me/team/claims/{claimId}/approve:
+    post:
+      operationId: approveTeamClaim
+      summary: Approve a pending claim of a direct report
+      security:
+        - oauth2: [claims:approve]
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Claim approved
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExpenseClaim' }
+        '400':
+          description: Claim is not pending
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such pending claim of a direct report
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Not signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /me/team/claims/{claimId}/reject:
+    post:
+      operationId: rejectTeamClaim
+      summary: Reject a pending claim of a direct report
+      security:
+        - oauth2: [claims:reject]
+      parameters:
+        - name: claimId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Claim rejected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExpenseClaim' }
+        '400':
+          description: Claim is not pending
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: No such pending claim of a direct report
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Not signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /claims:
+    get:
+      operationId: listApprovedClaims
+      summary: Every approved claim, across the organization
+      security:
+        - oauth2: [claims:read-all]
+      parameters:
+        - name: exported
+          in: query
+          schema: { type: boolean }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: Approved claims
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [count, data]
+                properties:
+                  count: { type: integer, description: total matching items }
+                  next: { type: string, nullable: true, description: relative URI of the next page }
+                  previous: { type: string, nullable: true, description: relative URI of the previous page }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/ExpenseClaim' }
+        '401':
+          description: Not signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /claims/export:
+    post:
+      operationId: exportApprovedClaims
+      summary: Export approved, unexported claims to a payroll file
+      security:
+        - oauth2: [claims:export]
+      responses:
+        '200':
+          description: Export file of the claims just exported
+          content:
+            text/csv:
+              schema: { type: string }
+        '400':
+          description: No approved, unexported claims to export
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401':
+          description: Not signed in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: /oauth2/authorize
+          tokenUrl: /oauth2/token
+          scopes:
+            claims:read: The caller's own claims
+            claims:submit: Create and send a claim
+            claims:read-team: Claims of the caller's direct reports
+            claims:approve: Approve a pending claim of a direct report
+            claims:reject: Reject a pending claim of a direct report
+            claims:read-all: Every approved claim
+            claims:export: Export approved, unexported claims
+  schemas:
+    NewExpenseClaim:
+      type: object
+      required: [amount, category, description]
+      properties:
+        amount: { type: number, format: double, description: claim amount }
+        category: { type: string, enum: [Travel, Meals, Lodging, Supplies, Other] }
+        description: { type: string }
+        receiptFileName: { type: string, description: file name of the attached receipt }
+        receiptContentType: { type: string, description: MIME type of the attached receipt }
+        receiptUrl: { type: string, description: location of the uploaded receipt file }
+    ExpenseClaim:
+      type: object
+      required: [id, employeeId, amount, category, description, status, submittedAt, exported]
+      properties:
+        id: { type: string }
+        employeeId: { type: string }
+        amount: { type: number, format: double }
+        category: { type: string, enum: [Travel, Meals, Lodging, Supplies, Other] }
+        description: { type: string }
+        receiptFileName: { type: string }
+        receiptContentType: { type: string }
+        receiptUrl: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        submittedAt: { type: string, format: date-time }
+        decidedAt: { type: string, format: date-time, nullable: true }
+        decidedBy: { type: string, nullable: true }
+        exported: { type: boolean }
+        exportedAt: { type: string, format: date-time, nullable: true }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: integer, description: HTTP or application error code }
+        message: { type: string, description: short human-readable label }
+        description: { type: string, description: detailed explanation }
+        moreInfo: { type: string, description: URI to documentation }
+
+security:
+  - oauth2: []

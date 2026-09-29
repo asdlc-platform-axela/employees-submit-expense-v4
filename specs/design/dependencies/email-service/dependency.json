@@ -1,0 +1,12 @@
+{
+  "name": "email-service",
+  "resource": {
+    "name": "email-service",
+    "description": "Sends transactional email notifications: an employee is notified when their claim is approved or rejected, and a manager is notified when a new claim awaits their approval."
+  },
+  "suggestions": [
+    { "name": "SendGrid", "style": "rest-api", "description": "Widely used transactional email API with generous free tier." },
+    { "name": "Amazon SES", "style": "sdk", "description": "Low-cost email sending, natural fit if already on AWS." },
+    { "name": "Postmark", "style": "rest-api", "description": "Transactional-email specialist known for high deliverability." }
+  ]
+}
