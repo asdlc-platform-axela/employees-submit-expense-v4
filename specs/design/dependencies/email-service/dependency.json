@@ -2,11 +2,28 @@
   "name": "email-service",
   "resource": {
     "name": "email-service",
-    "description": "Sends transactional email notifications: an employee is notified when their claim is approved or rejected, and a manager is notified when a new claim awaits their approval."
+    "description": "Sends transactional email notifications: an employee is notified when their claim is approved or rejected, and a manager is notified when a new claim awaits their approval.",
+    "provider": "SendGrid",
+    "config": [
+      {
+        "key": "SENDGRID_API_KEY",
+        "secret": true,
+        "description": "SendGrid API key with Mail Send permission, from SendGrid Settings > API Keys."
+      },
+      {
+        "key": "SENDGRID_FROM_EMAIL",
+        "description": "The verified sender address notification emails are sent from."
+      }
+    ],
+    "contract": {
+      "type": "openapi",
+      "path": "openapi.yaml",
+      "origin": "provider"
+    }
   },
-  "suggestions": [
-    { "name": "SendGrid", "style": "rest-api", "description": "Widely used transactional email API with generous free tier." },
-    { "name": "Amazon SES", "style": "sdk", "description": "Low-cost email sending, natural fit if already on AWS." },
-    { "name": "Postmark", "style": "rest-api", "description": "Transactional-email specialist known for high deliverability." }
-  ]
+  "provenance": {
+    "sourceUrl": "https://raw.githubusercontent.com/twilio/sendgrid-oai/main/spec/yaml/tsg_mail_v3.yaml",
+    "sha256": "6f17eb4d4dd458db133ee3deb6f0fbcdf8aca8d1d9ba9960349fafb32467a7c6",
+    "readOn": "2026-09-29T06:18:46Z"
+  }
 }
